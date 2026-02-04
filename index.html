@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sunchain Explorer</title>
+    <link rel="stylesheet" href="style.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <div class="app">
+      <header class="hero">
+        <div>
+          <p class="eyebrow">Sunchain L1 • Real-time Explorer</p>
+          <h1>Unified view of Sunchain in real time.</h1>
+          <p class="subhead">
+            Live blocks, validator health, and staking — all in one Solana-style
+            dashboard.
+          </p>
+        </div>
+        <div class="hero-card">
+          <div class="status">
+            <span class="dot"></span>
+            <span id="connection-status">Connecting to WebSocket…</span>
+          </div>
+          <div class="metric">
+            <p>Latest Block</p>
+            <h2 id="latest-block">#--</h2>
+            <span id="latest-hash">Awaiting stream…</span>
+          </div>
+        </div>
+      </header>
+
+      <section class="grid">
+        <div class="panel blocks">
+          <div class="panel-header">
+            <h3>Live Block Feed</h3>
+            <span class="chip">WebSocket</span>
+          </div>
+          <ul id="block-feed" class="feed"></ul>
+        </div>
+
+        <div class="panel network">
+          <div class="panel-header">
+            <h3>Network Health</h3>
+            <span class="chip">Live Metrics</span>
+          </div>
+          <div class="health-metrics">
+            <div class="health-card">
+              <p>Current TPS</p>
+              <h4 id="tps">--</h4>
+              <span class="metric-note">Streaming every 2s</span>
+            </div>
+            <div class="health-card">
+              <p>Active Validators</p>
+              <h4 id="validators">--</h4>
+              <span class="metric-note">Supermajority online</span>
+            </div>
+            <div class="health-card">
+              <p>Epoch Progress</p>
+              <h4 id="epoch">--%</h4>
+              <span class="metric-note">Rotating leaders</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel tabs">
+        <div class="tab-header">
+          <button class="tab-button active" data-tab="staking">Staking</button>
+          <button class="tab-button" data-tab="overview">Overview</button>
+          <button class="tab-button" data-tab="rewards">Rewards</button>
+        </div>
+        <div class="tab-content active" id="staking">
+          <div class="staking-grid">
+            <div>
+              <h3>Stake to a validator</h3>
+              <p class="subhead">
+                Connect your wallet to delegate SUNC to a validator and earn
+                rewards.
+              </p>
+              <button id="wallet-button" class="primary">Connect Wallet</button>
+              <div id="wallet-status" class="wallet-status">Not connected</div>
+            </div>
+            <form id="stake-form" class="stake-form">
+              <label>
+                Validator
+                <select id="validator-select">
+                  <option value="helios">Helios Labs — 0% commission</option>
+                  <option value="lumen">Lumen Core — 2% commission</option>
+                  <option value="nova">Nova Stake — 5% commission</option>
+                </select>
+              </label>
+              <label>
+                Amount (SUNC)
+                <input id="stake-amount" type="number" min="1" step="1" placeholder="250" />
+              </label>
+              <button class="primary" type="submit">Stake Tokens</button>
+              <p id="stake-result" class="stake-result"></p>
+            </form>
+          </div>
+        </div>
+        <div class="tab-content" id="overview">
+          <div class="overview">
+            <h3>Network Overview</h3>
+            <p class="subhead">
+              Sunchain finality in under 400ms with globally distributed
+              validators. Monitor throughput, leader schedules, and block
+              confirmation insights.
+            </p>
+            <div class="overview-cards">
+              <div class="overview-card">
+                <h4>Finality</h4>
+                <p>380ms median confirmation, 99.98% uptime.</p>
+              </div>
+              <div class="overview-card">
+                <h4>Node Latency</h4>
+                <p>Median 21ms heartbeat with 1.2k peer connections.</p>
+              </div>
+              <div class="overview-card">
+                <h4>Validator Regions</h4>
+                <p>48 regions with active stake weight distribution.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="tab-content" id="rewards">
+          <div class="overview">
+            <h3>Reward Streams</h3>
+            <p class="subhead">
+              Track daily staking rewards and unlock multipliers for top
+              validators.
+            </p>
+            <div class="overview-cards">
+              <div class="overview-card">
+                <h4>Daily Yield</h4>
+                <p>8.4% APR projected based on current epoch schedule.</p>
+              </div>
+              <div class="overview-card">
+                <h4>Boosts</h4>
+                <p>1.3x reward boost for early delegation this epoch.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+    <script src="script.js"></script>
+  </body>
+</html>
