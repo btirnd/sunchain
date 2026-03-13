@@ -55,3 +55,18 @@ func TestHandleConnRegistersInboundRemote(t *testing.T) {
 		t.Fatalf("expected inbound remote to be registered, got %#v", peers)
 	}
 }
+
+func TestHandleConnDeduplicatesInboundAndPeerList(t *testing.T) {
+	g := newTestGossip("127.0.0.1:7000")
+	conn := &testConn{
+		Reader: bytes.NewBufferString(`{"type":"peer_list","peers":["127.0.0.1:8001"]}`),
+		remote: &net.TCPAddr{IP: net.IPv4(127, 0, 0, 1), Port: 8001},
+	}
+
+	g.handleConn(context.Background(), conn)
+
+	peers := g.Peers()
+	if len(peers) != 1 || peers[0] != "127.0.0.1:8001" {
+		t.Fatalf("expected one deduplicated peer, got %#v", peers)
+	}
+}
