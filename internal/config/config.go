@@ -7,6 +7,8 @@ type Config struct {
 	RPCAddr       string
 	GossipAddr    string
 	BlockInterval time.Duration
+	DataDir       string
+	AllowedOrigin string
 }
 
 func New() Config {
@@ -15,5 +17,7 @@ func New() Config {
 		RPCAddr:       "0.0.0.0:8080",
 		GossipAddr:    "0.0.0.0:9000",
 		BlockInterval: 400 * time.Millisecond,
+		DataDir:       "./data",
+		AllowedOrigin: "*",
 	}
 }

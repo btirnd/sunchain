@@ -20,7 +20,15 @@ let mockIntervalId = null;
 
 const formatHash = (hash) => `${hash.slice(0, 10)}...${hash.slice(-6)}`;
 
-const renderBlock = (block) => {
+const normalizeBlock = (block) => ({
+  height: block.height ?? 0,
+  hash: block.hash ?? crypto.randomUUID().replace(/-/g, ""),
+  txCount: block.txCount ?? Math.floor(Math.random() * 500 + 1200),
+  leader: block.leader ?? block.producer_id ?? "unknown",
+});
+
+const renderBlock = (rawBlock) => {
+  const block = normalizeBlock(rawBlock);
   const item = document.createElement("li");
   item.innerHTML = `
     <div class="block-meta">
