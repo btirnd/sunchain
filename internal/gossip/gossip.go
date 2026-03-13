@@ -89,10 +89,12 @@ func (g *Gossip) handleConn(ctx context.Context, conn net.Conn) {
 	select {
 	case <-ctx.Done():
 	default:
-		_ = g.send(remote, Message{
+		if err := json.NewEncoder(conn).Encode(Message{
 			Type:  "peer_list",
 			Peers: g.Peers(),
-		})
+		}); err != nil {
+			g.logger.Warn("gossip encode response failed", "remote", remote, "error", err)
+		}
 	}
 }
 
