@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net"
+	"strings"
 	"sync"
 	"time"
 )
@@ -64,6 +65,9 @@ func (g *Gossip) Start(ctx context.Context) error {
 
 func (g *Gossip) handleConn(ctx context.Context, conn net.Conn) {
 	defer conn.Close()
+	remote := conn.RemoteAddr().String()
+	g.AddPeer(remote)
+
 	reader := bufio.NewReader(conn)
 	decoder := json.NewDecoder(reader)
 
@@ -85,7 +89,7 @@ func (g *Gossip) handleConn(ctx context.Context, conn net.Conn) {
 	select {
 	case <-ctx.Done():
 	default:
-		_ = g.send(conn.RemoteAddr().String(), Message{
+		_ = g.send(remote, Message{
 			Type:  "peer_list",
 			Peers: g.Peers(),
 		})
@@ -96,11 +100,31 @@ func (g *Gossip) mergePeers(peers []string) {
 	g.mu.Lock()
 	defer g.mu.Unlock()
 	for _, peer := range peers {
-		if peer == "" || peer == g.addr {
+		normalized := g.normalizePeer(peer)
+		if normalized == "" {
 			continue
 		}
-		g.peers[peer] = struct{}{}
+		g.peers[normalized] = struct{}{}
 	}
+}
+
+func (g *Gossip) normalizePeer(peer string) string {
+	peer = strings.TrimSpace(peer)
+	if peer == "" {
+		return ""
+	}
+
+	host, port, err := net.SplitHostPort(peer)
+	if err != nil || host == "" || port == "" {
+		return ""
+	}
+
+	normalized := net.JoinHostPort(host, port)
+	if normalized == g.addr {
+		return ""
+	}
+
+	return normalized
 }
 
 func (g *Gossip) AddPeer(peer string) {
