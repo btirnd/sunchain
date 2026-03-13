@@ -18,6 +18,8 @@ import (
 	"sunchain/internal/types"
 )
 
+const wsWriteTimeout = 10 * time.Second
+
 type Handler interface {
 	Health(ctx context.Context) (any, error)
 	Validators(ctx context.Context) (any, error)
@@ -238,6 +240,11 @@ func wsWriteJSON(conn net.Conn, payload any) error {
 }
 
 func wsWriteTextFrame(conn net.Conn, payload []byte) error {
+	if err := conn.SetWriteDeadline(time.Now().Add(wsWriteTimeout)); err != nil {
+		return err
+	}
+	defer conn.SetWriteDeadline(time.Time{})
+
 	header := []byte{0x81}
 	length := len(payload)
 
