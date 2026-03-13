@@ -65,10 +65,8 @@ func (g *Gossip) Start(ctx context.Context) error {
 
 func (g *Gossip) handleConn(ctx context.Context, conn net.Conn) {
 	defer conn.Close()
-	remote := g.normalizePeer(conn.RemoteAddr().String())
-	if remote != "" {
-		g.AddPeer(remote)
-	}
+	remote := conn.RemoteAddr().String()
+	g.AddPeer(remote)
 
 	reader := bufio.NewReader(conn)
 	decoder := json.NewDecoder(reader)
@@ -91,12 +89,10 @@ func (g *Gossip) handleConn(ctx context.Context, conn net.Conn) {
 	select {
 	case <-ctx.Done():
 	default:
-		if remote != "" {
-			_ = g.send(remote, Message{
-				Type:  "peer_list",
-				Peers: g.Peers(),
-			})
-		}
+		_ = g.send(remote, Message{
+			Type:  "peer_list",
+			Peers: g.Peers(),
+		})
 	}
 }
 
