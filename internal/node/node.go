@@ -87,14 +87,14 @@ func (n *Node) produceBlocks(ctx context.Context) error {
 		case <-ctx.Done():
 			return nil
 		case <-ticker.C:
-			if err := n.tryProduceBlock(); err != nil {
+			if err := n.tryProduceBlock(ctx); err != nil {
 				n.logger.Warn("block production failed", "error", err)
 			}
 		}
 	}
 }
 
-func (n *Node) tryProduceBlock() error {
+func (n *Node) tryProduceBlock(ctx context.Context) error {
 	hash, sequence, timestamp := n.poh.Tick("block")
 	validator, err := consensus.SelectValidator(n.validators, []byte(hash))
 	if err != nil {
@@ -120,7 +120,7 @@ func (n *Node) tryProduceBlock() error {
 	n.latest = block
 
 	n.logger.Info("block produced", "height", block.Height, "hash", block.Hash)
-	n.gossip.Broadcast(context.Background(), block.Hash)
+	n.gossip.Broadcast(ctx, block.Hash)
 	return nil
 }
 
