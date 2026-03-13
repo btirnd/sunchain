@@ -91,6 +91,12 @@ curl -s http://localhost:8080/rpc \
 
 Open `index.html` in a browser. The UI connects to a WebSocket at `ws://localhost:8080/blocks` if available; when the connection fails, it falls back to a simulated block stream and synthetic metrics so the dashboard is always active. The staking panel is a front-end mock to demonstrate user flows.
 
+### Dashboard preview
+
+Use `dashboard-preview.svg` for quick docs, presentations, or status updates when sharing the current Sunchain explorer look and feel. SVG keeps the preview diff-friendly in PRs where binary files are not supported.
+
+![Sunchain dashboard preview](dashboard-preview.svg)
+
 ## Notes
 
 - This project is a prototype for experimentation; it does not persist chain data and does not implement consensus finality.
