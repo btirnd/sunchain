@@ -93,7 +93,7 @@ func (g *Gossip) handleConn(ctx context.Context, conn net.Conn) {
 			Type:  "peer_list",
 			Peers: g.Peers(),
 		}); err != nil {
-			g.logger.Warn("gossip encode response failed", "remote", remote, "error", err)
+			g.logger.Warn("gossip peer_list response failed", "peer", remote, "error", err)
 		}
 	}
 }
