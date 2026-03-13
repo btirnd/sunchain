@@ -16,6 +16,7 @@ const MAX_FEED_ITEMS = 8;
 let currentBlock = 982341;
 let socket;
 let walletConnected = false;
+let mockIntervalId = null;
 
 const formatHash = (hash) => `${hash.slice(0, 10)}...${hash.slice(-6)}`;
 
@@ -64,7 +65,11 @@ const generateBlock = () => {
 
 const startMockStream = () => {
   connectionStatus.textContent = "Streaming (simulated)";
-  setInterval(() => {
+  if (mockIntervalId) {
+    return;
+  }
+
+  mockIntervalId = setInterval(() => {
     const block = generateBlock();
     renderBlock(block);
     updateHero(block);
@@ -72,10 +77,28 @@ const startMockStream = () => {
 };
 
 const connectWebSocket = () => {
+  let isFallbackActive = false;
+
+  const activateFallback = () => {
+    if (isFallbackActive) {
+      return;
+    }
+
+    isFallbackActive = true;
+    if (socket) {
+      socket.onopen = null;
+      socket.onmessage = null;
+      socket.onclose = null;
+      socket.onerror = null;
+    }
+
+    startMockStream();
+  };
+
   try {
     socket = new WebSocket("ws://localhost:8080/blocks");
   } catch (error) {
-    startMockStream();
+    activateFallback();
     return;
   }
 
@@ -96,13 +119,11 @@ const connectWebSocket = () => {
   });
 
   socket.addEventListener("close", () => {
-    connectionStatus.textContent = "Connection lost — using fallback";
-    startMockStream();
+    activateFallback();
   });
 
   socket.addEventListener("error", () => {
-    connectionStatus.textContent = "WebSocket error — using fallback";
-    startMockStream();
+    activateFallback();
   });
 };
 
