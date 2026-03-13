@@ -19,6 +19,8 @@ func main() {
 	flag.StringVar(&cfg.RPCAddr, "rpc-addr", cfg.RPCAddr, "RPC listen address")
 	flag.StringVar(&cfg.GossipAddr, "gossip-addr", cfg.GossipAddr, "gossip listen address")
 	flag.DurationVar(&cfg.BlockInterval, "block-interval", cfg.BlockInterval, "block production interval")
+	flag.StringVar(&cfg.DataDir, "data-dir", cfg.DataDir, "directory used for chain state persistence")
+	flag.StringVar(&cfg.AllowedOrigin, "allowed-origin", cfg.AllowedOrigin, "allowed Origin header for WebSocket /blocks endpoint")
 	flag.Parse()
 
 	logger := logging.NewLogger()

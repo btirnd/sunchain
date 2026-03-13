@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"path/filepath"
 	"sync"
 	"time"
 
@@ -18,11 +19,16 @@ type Node struct {
 	cfg        config.Config
 	logger     *slog.Logger
 	validators []types.Validator
-	chainMu    sync.Mutex
+	chainMu    sync.RWMutex
 	latest     types.Block
 	poh        *consensus.PoH
 	gossip     *gossip.Gossip
 	rpcServer  *rpc.Server
+
+	subsMu       sync.RWMutex
+	nextSubID    int
+	subscribers  map[int]chan types.Block
+	chainStateDB string
 }
 
 func New(cfg config.Config, logger *slog.Logger) (*Node, error) {
@@ -37,14 +43,25 @@ func New(cfg config.Config, logger *slog.Logger) (*Node, error) {
 	}
 
 	node := &Node{
-		cfg:        cfg,
-		logger:     logger,
-		validators: validators,
-		poh:        consensus.NewPoH(cfg.NodeID),
+		cfg:          cfg,
+		logger:       logger,
+		validators:   validators,
+		poh:          consensus.NewPoH(cfg.NodeID),
+		subscribers:  make(map[int]chan types.Block),
+		chainStateDB: filepath.Join(cfg.DataDir, "chain-state.json"),
+	}
+
+	latest, err := loadLatestBlock(node.chainStateDB)
+	if err != nil {
+		return nil, err
+	}
+	node.latest = latest
+	if latest.Height > 0 {
+		node.logger.Info("restored chain state", "height", latest.Height, "hash", latest.Hash)
 	}
 
 	node.gossip = gossip.New(cfg.GossipAddr, cfg.NodeID, logger)
-	node.rpcServer = rpc.New(cfg.RPCAddr, node, logger)
+	node.rpcServer = rpc.New(cfg.RPCAddr, node, cfg.AllowedOrigin, logger)
 
 	return node, nil
 }
@@ -106,8 +123,6 @@ func (n *Node) tryProduceBlock(ctx context.Context) error {
 	}
 
 	n.chainMu.Lock()
-	defer n.chainMu.Unlock()
-
 	nextHeight := n.latest.Height + 1
 	block := types.Block{
 		Height:      nextHeight,
@@ -118,9 +133,15 @@ func (n *Node) tryProduceBlock(ctx context.Context) error {
 		PoHSequence: sequence,
 	}
 	n.latest = block
+	n.chainMu.Unlock()
+
+	if err := persistLatestBlock(n.chainStateDB, block); err != nil {
+		return err
+	}
 
 	n.logger.Info("block produced", "height", block.Height, "hash", block.Hash)
 	n.gossip.Broadcast(ctx, block.Hash)
+	n.broadcastBlock(block)
 	return nil
 }
 
@@ -151,7 +172,44 @@ func (n *Node) LatestBlock(ctx context.Context) (any, error) {
 		return nil, ctx.Err()
 	default:
 	}
-	n.chainMu.Lock()
-	defer n.chainMu.Unlock()
+	n.chainMu.RLock()
+	defer n.chainMu.RUnlock()
 	return n.latest, nil
+}
+
+func (n *Node) SubscribeBlocks(buffer int) (int, <-chan types.Block) {
+	if buffer < 1 {
+		buffer = 1
+	}
+
+	n.subsMu.Lock()
+	defer n.subsMu.Unlock()
+	n.nextSubID++
+	id := n.nextSubID
+	ch := make(chan types.Block, buffer)
+	n.subscribers[id] = ch
+	return id, ch
+}
+
+func (n *Node) UnsubscribeBlocks(id int) {
+	n.subsMu.Lock()
+	defer n.subsMu.Unlock()
+	ch, ok := n.subscribers[id]
+	if !ok {
+		return
+	}
+	delete(n.subscribers, id)
+	close(ch)
+}
+
+func (n *Node) broadcastBlock(block types.Block) {
+	n.subsMu.RLock()
+	defer n.subsMu.RUnlock()
+	for id, ch := range n.subscribers {
+		select {
+		case ch <- block:
+		default:
+			n.logger.Warn("dropping block for slow subscriber", "subscriber_id", id, "height", block.Height)
+		}
+	}
 }
