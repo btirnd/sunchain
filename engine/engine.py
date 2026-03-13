@@ -18,10 +18,11 @@ class Engine:
 
     def finalize_block(self, transactions: Iterable[Dict[str, Any]]) -> None:
         """Apply transactions, advance the height, and persist results."""
-        new_state = self.apply_transactions(transactions)
+        transaction_list = list(transactions)
+        new_state = self.apply_transactions(transaction_list)
         self.block_height += 1
         self.state = new_state
-        self.adapter.save_block(self.block_height, transactions, self.state)
+        self.adapter.save_block(self.block_height, transaction_list, self.state)
 
     def apply_transactions(self, transactions: Iterable[Dict[str, Any]]) -> Dict[str, Any]:
         updated_state = dict(self.state)
