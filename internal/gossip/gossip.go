@@ -85,10 +85,12 @@ func (g *Gossip) handleConn(ctx context.Context, conn net.Conn) {
 	select {
 	case <-ctx.Done():
 	default:
-		_ = g.send(conn.RemoteAddr().String(), Message{
+		if err := json.NewEncoder(conn).Encode(Message{
 			Type:  "peer_list",
 			Peers: g.Peers(),
-		})
+		}); err != nil {
+			g.logger.Warn("gossip peer_list response failed", "peer", conn.RemoteAddr().String(), "error", err)
+		}
 	}
 }
 
